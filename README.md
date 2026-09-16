@@ -1,131 +1,418 @@
 # Expense Tracker API
 
+A RESTful Expense Tracker API built with **Python and FastAPI** that allows users to securely manage their personal expenses.
 
-Expense Tracker API is a backend application designed to help users manage their personal expenses.
-Users can register, log in, update their username or delete their account, and perform CRUD operations on their expenses.
-The API also features a filtering system to search for expenses by dates and categories.
+The application provides user registration and authentication, expense CRUD operations, filtering by category and date, PostgreSQL database integration, database migrations using Alembic, automated testing with Pytest, and interactive API documentation using Swagger/OpenAPI.
 
+---
 
-This project is inspired by an idea from [roadmap.sh](https://roadmap.sh), a platform that offers community-created roadmaps, best practices, projects, and resources to help people grow in their technology careers.
+## 🚀 Features
 
+- User registration and login
+- JWT-based authentication
+- User-specific expense management
+- Create, read, update, and delete expenses
+- Filter expenses by category
+- Filter expenses by date range
+- Update username
+- Delete user account
+- PostgreSQL database integration
+- Database migrations using Alembic
+- Environment variable configuration
+- Automated testing using Pytest
+- Interactive Swagger/OpenAPI documentation
 
-Specific inspiration for this project comes from the following link: [Expense Tracker API in roadmap.sh](https://roadmap.sh/projects/expense-tracker-api)
+---
 
+## 🛠️ Tech Stack
 
-<img alt="Static Badge" src="https://img.shields.io/badge/Version-1.2.15-seagreen?style=for-the-badge">
+| Technology | Purpose |
+|------------|---------|
+| Python | Backend programming |
+| FastAPI | REST API framework |
+| PostgreSQL | Database |
+| SQLAlchemy | Database ORM |
+| JWT | Authentication |
+| Alembic | Database migrations |
+| Pytest | Automated testing |
+| Swagger/OpenAPI | API documentation |
+| Git & GitHub | Version control |
 
+---
 
-<br>
+## 🏗️ Application Architecture
 
-## Features
+```text
+                         Client
+                           |
+                           v
+                   FastAPI REST API
+                           |
+              +------------+------------+
+              |                         |
+              v                         v
+       Authentication            Expense Management
+              |                         |
+              v                         v
+             JWT                  CRUD Operations
+                                        |
+                                        v
+                                 Filtering System
+                                  /           \
+                                 /             \
+                            Category        Date Range
+                                 \             /
+                                  \           /
+                                   v         v
+                                    SQLAlchemy
+                                        |
+                                        v
+                                   PostgreSQL
+```
 
-- **Account management:** Users can register, login, update their username or delete their account.
-- **Authentication with JWT:** The API is protected by JSON Web Tokens (JWT), only authenticated users can access their data and perform operations on the API.
-- **Expense administration:** Users can create, read, update and delete their expenses. Expenses can be filtered by dates and categories.
-- **Secure and Scalable Database:** The database I used is PostgreSQL. Sensitive settings, such as the database connection URL, are managed through an `.env` file, so users can easily switch databases if they prefer, by adjusting only the `DATABASE_URL` variable.
-- **Database Migrations:** Database schema is kept up to date through migrations managed with Alembic.
-- **Automated testing:** This project uses pytest to perform unit tests and check that everything works correctly.
+---
 
-<br>
+## 🔐 Authentication
 
-## Installation
+The API uses **JSON Web Tokens (JWT)** for authentication.
 
-1. Clone this repository on your local machine:
+### Authentication Flow
 
-   ```bash
-   git clone https://github.com/GarnipudiNani/Expense-Tracker-API.git
+```text
+User Registration
+       |
+       v
+     Login
+       |
+       v
+JWT Access Token
+       |
+       v
+Authenticated Request
+       |
+       v
+Protected API Endpoint
+```
 
-   ```
+Only authenticated users can access protected expense endpoints.
 
-2. Go to the project directory:
+Users can manage their own expense records through authenticated requests.
 
-   ```bash
-   cd Expense-Tracker-API
-   ```
+---
 
-3. Create and activate a virtual environment:
+## 📌 API Endpoints
 
-   ```bash
-   python -m venv .venv          # Create a virtual environment
-   .venv\Scripts\activate        # Activate the environment in Windows
-   source .expvenv/bin/activate  # Activate the environment in Linux/MacOS
-   ```
+### Authentication
 
-4. Install the necessary dependencies for the project using the `requirements.txt` file:
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/signup` | Register a new user |
+| POST | `/login` | Login and obtain JWT token |
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Expenses
 
-5. This project uses environment variables to configure the connection to the database and a secret key for JWT authentication. You must create a file named `.env` in the root directory of the project with the following variables:
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/expenses` | Retrieve user expenses |
+| POST | `/expenses` | Create a new expense |
+| PUT | `/expenses/{id}` | Update an expense |
+| DELETE | `/expenses/{id}` | Delete an expense |
 
-   ```python
-   DATABASE_URL=postgresql://<your_user>:<your_password>@localhost/<your_database>
-   SECRET_KEY=<generated_unique_key>
-   ```
+### User Account
 
-   For the `SECRET_KEY`, you can generate a secure key by running the following command in your terminal:
-   
-   ```bash
-   openssl rand -hex 32
-   ```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| PUT | `/user` | Update username |
+| DELETE | `/user` | Delete user account |
 
-   Copy the generated value and assign it to the `SECRET_KEY` variable in your `.env` file. If you plan to use a different database, such as SQLite or MySQL, simply update the `DATABASE_URL` with the connection string relevant to your chosen database.
+---
 
-   > Note: Make sure not to include the .env file in version control, as it contains sensitive information. The project is already configured with a .gitignore file to automatically exclude this file.
-7. Start the API development server with the following command:
+## 🔎 Expense Filtering
 
-    ```bash
-    uvicorn main:app --reload
-    ```
+The API supports filtering expenses by:
 
-<br>
+- Category
+- Start date
+- End date
 
-By following these steps, you'll be able to install and run the Expense Tracker API in your local environment.
-Adjust the `.env` file if you need to change the database or authentication settings.
+### Example
 
-<br>
+```text
+GET /expenses?category=Food
+```
 
-## Running Tests
+Date range example:
 
-This project uses pytest to perform automated tests to ensure the reliability and functionality of key features.
-To run the tests, use the following command:
+```text
+GET /expenses?start_date=2026-09-01&end_date=2026-09-30
+```
+
+This allows users to retrieve specific expense records instead of retrieving their complete expense history.
+
+---
+
+## 🗄️ Database
+
+The application uses **PostgreSQL** for persistent data storage.
+
+Database schema changes are managed using **Alembic migrations**.
+
+Sensitive configuration values such as the database URL and JWT secret key are stored using environment variables.
+
+### Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+DATABASE_URL=postgresql://<username>:<password>@localhost/<database>
+SECRET_KEY=<your-secret-key>
+```
+
+> **Important:** Never commit your `.env` file or expose your secret key in the repository.
+
+---
+
+## 🧪 Testing
+
+The project uses **Pytest** for automated testing.
+
+Run the tests with:
+
 ```bash
 pytest
 ```
 
-<br>
+---
 
-## How to use it
+## 📖 API Documentation
 
-Once the application is running, you can access Swagger's interactive API documentation at 
-`http://localhost:8000/docs`, where you can visualize and test the available API endpoints.
+FastAPI automatically generates interactive API documentation using Swagger/OpenAPI.
 
-### Main Endpoints
+After starting the application, open:
 
-**Authentication:**
-- **POST** `/signup` - User registration.
-- **POST** `/login` - User login.
+```text
+http://localhost:8000/docs
+```
 
-**Expenses:**
-- **GET** `/expenses` - Retrieve a list of expenses.
-- **POST** `/expenses` - Create a new expense.
-- **PUT** `/expenses/{id}` - Update an expense by ID.
-- **DELETE** `/expenses/{id}` - Delete an expense by ID.
+Swagger UI allows you to:
 
-**User Account:**
-- **PUT** `/user` - Update the username.
-- **DELETE** `/user` - Delete the user account.
+- View available endpoints
+- Test API requests
+- Authenticate using JWT
+- Inspect request parameters
+- View API responses
 
-<br>
+---
 
-## Feedback & Contributions
+## ⚙️ Installation & Setup
 
-I want to clarify that this is my first API project (of the many I want to do), and I welcome any feedback or contributions. If you find any bugs or have suggestions for improvements, feel free to open an issue or submit a pull request.
+### 1. Clone the Repository
 
-<br>
+```bash
+git clone https://github.com/GarnipudiNani/Expense-Tracker-API.git
+```
 
-### **Thanks for checking out the project 🤍**
+### 2. Navigate to the Project Directory
 
+```bash
+cd Expense-Tracker-API
+```
 
+### 3. Create a Virtual Environment
 
+#### Windows
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+#### Linux / macOS
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 4. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 5. Configure Environment Variables
+
+Create a `.env` file:
+
+```env
+DATABASE_URL=postgresql://<username>:<password>@localhost/<database>
+SECRET_KEY=<your-secret-key>
+```
+
+Replace the placeholder values with your PostgreSQL credentials and a secure secret key.
+
+### 6. Run Database Migrations
+
+```bash
+alembic upgrade head
+```
+
+### 7. Start the Application
+
+```bash
+uvicorn main:app --reload
+```
+
+The API will be available at:
+
+```text
+http://localhost:8000
+```
+
+### 8. Open Swagger Documentation
+
+Visit:
+
+```text
+http://localhost:8000/docs
+```
+
+---
+
+## 📂 Project Structure
+
+```text
+Expense-Tracker-API/
+│
+├── alembic/
+│   └── ...
+│
+├── tests/
+│   └── ...
+│
+├── .env
+├── .gitignore
+├── alembic.ini
+├── main.py
+├── requirements.txt
+└── README.md
+```
+
+> Update this structure if your actual project contains additional files or folders.
+
+---
+
+## 🔄 Application Workflow
+
+```text
+1. User creates an account
+          ↓
+2. User logs in
+          ↓
+3. API generates JWT token
+          ↓
+4. User sends authenticated request
+          ↓
+5. API validates JWT
+          ↓
+6. Expense operation is performed
+          ↓
+7. PostgreSQL stores/retrieves data
+          ↓
+8. API returns the response
+```
+
+---
+
+## 💡 Example Use Case
+
+A user can use the API to:
+
+```text
+Register
+   ↓
+Login
+   ↓
+Create Expense
+   ↓
+View Expenses
+   ↓
+Filter by Category / Date
+   ↓
+Update Expense
+   ↓
+Delete Expense
+```
+
+Example expense records:
+
+```text
+Food        → ₹500
+Transport   → ₹200
+Shopping    → ₹1,000
+Food        → ₹350
+```
+
+Users can filter their expenses by category or date range.
+
+---
+
+## 🔒 Security
+
+The project implements basic security practices including:
+
+- JWT-based authentication
+- Protected API endpoints
+- User-specific data access
+- Environment variables for sensitive configuration
+- `.gitignore` protection for the `.env` file
+
+For production deployment, additional security measures such as HTTPS, secure secret management, rate limiting, and production server configuration should be considered.
+
+---
+
+## 🔮 Future Improvements
+
+Possible future improvements include:
+
+- Monthly expense summaries
+- Budget management
+- Spending analytics
+- Pagination and sorting
+- Expense statistics
+- Docker containerization
+- CI/CD pipeline
+- Frontend dashboard
+- Cloud deployment
+
+---
+
+## 📚 Project Inspiration
+
+This project was developed based on the **Expense Tracker API** project idea from [roadmap.sh](https://roadmap.sh/projects/expense-tracker-api).
+
+The project helped strengthen practical skills in:
+
+- Python backend development
+- FastAPI
+- REST API design
+- PostgreSQL
+- JWT authentication
+- Database migrations
+- Automated testing
+
+---
+
+## 👨‍💻 Author
+
+**Nani Garnipudi**
+
+GitHub: [GarnipudiNani](https://github.com/GarnipudiNani)
+
+---
+
+## ⭐ Feedback
+
+If you find this project useful or have suggestions for improvement, feel free to open an issue or submit a pull request.
+
+If you find the project helpful, consider giving the repository a ⭐.
