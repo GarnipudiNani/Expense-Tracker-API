@@ -284,21 +284,38 @@ http://localhost:8000/docs
 ```text
 Expense-Tracker-API/
 │
+├── app/
+│   ├── __init__.py
+│   ├── database.py        # SQLAlchemy engine/session, get_db dependency
+│   ├── models.py           # User and Expense ORM models
+│   ├── schemas.py          # Pydantic request/response schemas
+│   ├── security.py         # Password hashing, JWT creation/decoding
+│   ├── deps.py              # get_current_user dependency
+│   └── routers/
+│       ├── auth.py          # /signup, /login
+│       ├── expenses.py      # /expenses CRUD + filtering
+│       └── users.py         # /user update/delete
+│
 ├── alembic/
-│   └── ...
+│   ├── env.py
+│   ├── script.py.mako
+│   └── versions/
+│       └── ..._create_users_and_expenses_tables.py
 │
 ├── tests/
-│   └── ...
+│   ├── conftest.py          # Test fixtures (isolated in-memory SQLite DB)
+│   ├── test_auth.py
+│   ├── test_expenses.py
+│   ├── test_authorization.py
+│   └── test_user.py
 │
-├── .env
-├── .gitignore
+├── main.py                  # FastAPI app entrypoint
 ├── alembic.ini
-├── main.py
 ├── requirements.txt
+├── .env.example
+├── .gitignore
 └── README.md
 ```
-
-> Update this structure if your actual project contains additional files or folders.
 
 ---
 
@@ -370,6 +387,24 @@ The project implements basic security practices including:
 For production deployment, additional security measures such as HTTPS, secure secret management, rate limiting, and production server configuration should be considered.
 
 ---
+
+## ✅ Verified
+
+Every endpoint and workflow below was exercised end-to-end against a real
+PostgreSQL database, plus a 26-test automated Pytest suite (`pytest -q`
+→ `26 passed`):
+
+- Signup, duplicate-signup rejection, login, invalid-login rejection
+- Missing/invalid JWT rejection on protected routes
+- Expense create / list / update / delete
+- Category filtering and date-range filtering (including an invalid range → 400)
+- Field validation (negative amount, missing field, future date, short password → 422)
+- User A cannot view, update, or delete User B's expenses (404, not 403, so ids
+  can't be probed)
+- Username update, username-conflict rejection, account deletion
+- Deleting a user cascades and removes their expenses
+- `alembic upgrade head` against a fresh PostgreSQL database
+- `/docs` and `/redoc` render correctly
 
 ## 🔮 Future Improvements
 
