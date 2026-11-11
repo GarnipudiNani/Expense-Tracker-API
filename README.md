@@ -19,7 +19,8 @@ app/routers/         Authentication, expense and user endpoints
 alembic/             Database migration environment and revisions
 tests/               API and authorization tests
 main.py              FastAPI application
-requirements.txt     Python dependencies
+requirements.txt     Runtime dependencies
+requirements-dev.txt Development and test dependencies
 ```
 
 ## Local setup
@@ -30,7 +31,7 @@ Requires Python 3.10+ and PostgreSQL. From the repository root:
 python -m venv .venv
 # Windows PowerShell: .venv\Scripts\Activate.ps1
 # macOS/Linux: source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 ```
 
 Create a PostgreSQL database and configure environment variables in `.env` (or your shell/hosting provider). Never commit real credentials:
@@ -111,7 +112,7 @@ Alembic reads `DATABASE_URL` from the environment. No schema changes beyond the 
 pytest -q
 ```
 
-Tests override the application database with a fresh in memory SQLite database and do not require PostgreSQL. JWT configuration is set to a test-only value by the test fixtures.
+Tests override the application database with a fresh in-memory SQLite database and do not require PostgreSQL. JWT configuration is set to a test-only value by the test fixtures. Install `requirements-dev.txt` to run tests; production installs need only `requirements.txt`.
 
 ## Render deployment
 
