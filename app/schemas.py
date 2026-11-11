@@ -130,3 +130,9 @@ class ExpenseOut(ExpenseBase):
     owner_id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ExpenseSummary(BaseModel):
+    category: str
+    total: Decimal = Field(decimal_places=2)
+    count: int
