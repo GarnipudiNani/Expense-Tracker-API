@@ -8,6 +8,7 @@ from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -24,10 +25,11 @@ def _get_owned_expense_or_404(expense_id: int, user: models.User, db: Session) -
     a user cannot use this endpoint to probe which expense ids exist for
     other users.
     """
-    expense = (
-        db.query(models.Expense)
-        .filter(models.Expense.id == expense_id, models.Expense.owner_id == user.id)
-        .first()
+    expense = db.scalar(
+        select(models.Expense).where(
+            models.Expense.id == expense_id,
+            models.Expense.owner_id == user.id,
+        )
     )
     if expense is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")
@@ -76,16 +78,61 @@ def list_expenses(
             detail="start_date cannot be after end_date",
         )
 
-    query = db.query(models.Expense).filter(models.Expense.owner_id == current_user.id)
+    query = select(models.Expense).where(models.Expense.owner_id == current_user.id)
 
     if category:
-        query = query.filter(models.Expense.category == category)
+        query = query.where(models.Expense.category == category)
     if start_date:
-        query = query.filter(models.Expense.date >= start_date)
+        query = query.where(models.Expense.date >= start_date)
     if end_date:
-        query = query.filter(models.Expense.date <= end_date)
+        query = query.where(models.Expense.date <= end_date)
 
-    return query.order_by(models.Expense.date.desc()).offset(skip).limit(limit).all()
+    query = query.order_by(models.Expense.date.desc()).offset(skip).limit(limit)
+    return db.scalars(query).all()
+
+
+@router.get(
+    "/summary",
+    response_model=list[schemas.ExpenseSummary],
+    summary="Summarize the current user's expenses by category",
+    description="Returns category totals and counts for the authenticated user, optionally filtered by an inclusive date range.",
+    responses={
+        400: {"description": "Invalid date range"},
+        401: {"description": "Missing or invalid bearer token"},
+    },
+)
+def summarize_expenses(
+    start_date: Optional[date] = Query(default=None, description="Include expenses on or after this date"),
+    end_date: Optional[date] = Query(default=None, description="Include expenses on or before this date"),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    if start_date and end_date and start_date > end_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="start_date cannot be after end_date",
+        )
+
+    total = func.sum(models.Expense.amount)
+    query = (
+        select(
+            models.Expense.category,
+            total.label("total"),
+            func.count(models.Expense.id).label("count"),
+        )
+        .where(models.Expense.owner_id == current_user.id)
+        .group_by(models.Expense.category)
+    )
+    if start_date:
+        query = query.where(models.Expense.date >= start_date)
+    if end_date:
+        query = query.where(models.Expense.date <= end_date)
+
+    query = query.order_by(total.desc(), models.Expense.category.asc())
+    return [
+        schemas.ExpenseSummary(category=category, total=amount, count=count)
+        for category, amount, count in db.execute(query)
+    ]
 
 
 @router.put(

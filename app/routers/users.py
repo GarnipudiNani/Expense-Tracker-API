@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -18,9 +19,12 @@ def update_user(
     current_user: models.User = Depends(get_current_user),
 ):
     existing = (
-        db.query(models.User)
-        .filter(models.User.username == user_in.username, models.User.id != current_user.id)
-        .first()
+        db.scalar(
+            select(models.User).where(
+                models.User.username == user_in.username,
+                models.User.id != current_user.id,
+            )
+        )
     )
     if existing:
         raise HTTPException(
