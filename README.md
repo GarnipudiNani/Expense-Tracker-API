@@ -1,5 +1,7 @@
 # Expense Tracker API
 
+[![CI](https://github.com/GarnipudiNani/Expense-Tracker-API/actions/workflows/ci.yml/badge.svg)](https://github.com/GarnipudiNani/Expense-Tracker-API/actions/workflows/ci.yml)
+
 A FastAPI backend for personal expense tracking. It provides JWT authentication, user scoped expense CRUD, filtering, pagination, PostgreSQL persistence, and Alembic migrations.
 
 ## Features and stack

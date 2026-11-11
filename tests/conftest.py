@@ -21,13 +21,15 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
 from main import app
 
-TEST_DATABASE_URL = "sqlite:///:memory:"
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "sqlite:///:memory:")
 
-engine = create_engine(
-    TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
+engine_options = {}
+if TEST_DATABASE_URL.startswith("sqlite"):
+    engine_options["connect_args"] = {"check_same_thread": False}
+    if TEST_DATABASE_URL == "sqlite:///:memory:":
+        engine_options["poolclass"] = StaticPool
+
+engine = create_engine(TEST_DATABASE_URL, **engine_options)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
