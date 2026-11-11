@@ -8,6 +8,7 @@ from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -24,10 +25,11 @@ def _get_owned_expense_or_404(expense_id: int, user: models.User, db: Session) -
     a user cannot use this endpoint to probe which expense ids exist for
     other users.
     """
-    expense = (
-        db.query(models.Expense)
-        .filter(models.Expense.id == expense_id, models.Expense.owner_id == user.id)
-        .first()
+    expense = db.scalar(
+        select(models.Expense).where(
+            models.Expense.id == expense_id,
+            models.Expense.owner_id == user.id,
+        )
     )
     if expense is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")
@@ -76,16 +78,17 @@ def list_expenses(
             detail="start_date cannot be after end_date",
         )
 
-    query = db.query(models.Expense).filter(models.Expense.owner_id == current_user.id)
+    query = select(models.Expense).where(models.Expense.owner_id == current_user.id)
 
     if category:
-        query = query.filter(models.Expense.category == category)
+        query = query.where(models.Expense.category == category)
     if start_date:
-        query = query.filter(models.Expense.date >= start_date)
+        query = query.where(models.Expense.date >= start_date)
     if end_date:
-        query = query.filter(models.Expense.date <= end_date)
+        query = query.where(models.Expense.date <= end_date)
 
-    return query.order_by(models.Expense.date.desc()).offset(skip).limit(limit).all()
+    query = query.order_by(models.Expense.date.desc()).offset(skip).limit(limit)
+    return db.scalars(query).all()
 
 
 @router.put(

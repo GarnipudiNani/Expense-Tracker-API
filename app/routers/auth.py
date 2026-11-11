@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -21,7 +22,9 @@ router = APIRouter(tags=["Authentication"])
     responses={409: {"description": "Username already registered"}, 422: {"description": "Invalid registration fields"}},
 )
 def signup(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
-    existing = db.query(models.User).filter(models.User.username == user_in.username).first()
+    existing = db.scalar(
+        select(models.User).where(models.User.username == user_in.username)
+    )
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -53,7 +56,9 @@ def signup(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     responses={401: {"description": "Incorrect username or password"}},
 )
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.username == form_data.username).first()
+    user = db.scalar(
+        select(models.User).where(models.User.username == form_data.username)
+    )
 
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
